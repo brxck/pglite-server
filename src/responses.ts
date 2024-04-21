@@ -24,13 +24,32 @@ function createStartupMessageReponse(): Buffer {
   backendKeyData.writeUint32BE(1, 5);
   backendKeyData.writeUint32BE(2, 9);
 
+  // ParameterStatus
+  const parameterName = "client_encoding";
+  const parameterValue = "UTF8";
+  const parameterStatusLength =
+    1 + 4 + parameterName.length + 1 + parameterValue.length + 1;
+  const parameterStatus = Buffer.alloc(parameterStatusLength);
+  let offset = 0;
+  parameterStatus.write("S", offset++);
+  parameterStatus.writeInt32BE(parameterStatusLength - 1, offset);
+  offset += 4;
+  parameterStatus.write(`${parameterName}\0`, offset);
+  offset += parameterName.length + 1;
+  parameterStatus.write(`${parameterValue}\0`, offset);
+
   // ReadyForQuery
   const readyForQuery = Buffer.alloc(6);
   readyForQuery.write("Z");
   readyForQuery.writeUint32BE(5, 1);
   readyForQuery.write("I", 5);
 
-  return Buffer.concat([authOk, backendKeyData, readyForQuery]);
+  return Buffer.concat([
+    authOk,
+    backendKeyData,
+    parameterStatus,
+    readyForQuery,
+  ]);
 }
 
 export async function createMessageResponse(
